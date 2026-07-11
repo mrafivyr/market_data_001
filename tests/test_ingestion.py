@@ -29,11 +29,11 @@ def test_pipeline_cold_start_inserts_data(mock_session_local, mock_yf_download, 
     # 2. Build a structural mock MultiIndex DataFrame matching yfinance output
     columns = pd.MultiIndex.from_product(
         [['Open', 'High', 'Low', 'Close', 'Volume'], ['AAPL']],
-        names=['Price', 'Ticker']
+        names=['Price', 'Symbol']
     )
     mock_data = pd.DataFrame(
         [[180.0, 185.0, 179.0, 182.0, 5000000]], 
-        index=pd.DatetimeIndex(['2026-07-10']), 
+        index=pd.DatetimeIndex(['2026-07-10'], name="Date"), 
         columns=columns
     )
     mock_yf_download.return_value = mock_data
@@ -64,11 +64,11 @@ def test_pipeline_delta_run_updates_overlapping_data(mock_session_local, mock_yf
     # Create mock API data returning the SAME date but with an updated/corrected Close price
     columns = pd.MultiIndex.from_product(
         [['Open', 'High', 'Low', 'Close', 'Volume'], ['AAPL']],
-        names=['Price', 'Ticker']
+        names=['Price', 'Symbol']
     )
     mock_data = pd.DataFrame(
         [[180.0, 185.0, 179.0, 195.0, 6000000]],  # Close altered to 195.0
-        index=pd.DatetimeIndex(['2026-07-10']), 
+        index=pd.DatetimeIndex(['2026-07-10'], name="Date"), 
         columns=columns
     )
     mock_yf_download.return_value = mock_data
