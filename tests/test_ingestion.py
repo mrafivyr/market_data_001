@@ -10,8 +10,8 @@ def test_get_latest_stored_date_empty(db_session):
 
 def test_get_latest_stored_date_with_data(db_session):
     """Verifies that the correct maximum date is extracted from existing records."""
-    record1 = StockPrice(date=date(2026, 7, 1), symbol="AAPL", close=150.0)
-    record2 = StockPrice(date=date(2026, 7, 10), symbol="AAPL", close=155.0)
+    record1 = StockPrice(date=date(2026, 7, 1), ticker="AAPL", close=150.0)
+    record2 = StockPrice(date=date(2026, 7, 10), ticker="AAPL", close=155.0)
     
     db_session.add(record1)
     db_session.add(record2)
@@ -29,7 +29,7 @@ def test_pipeline_cold_start_inserts_data(mock_session_local, mock_yf_download, 
     # 2. Build a structural mock MultiIndex DataFrame matching yfinance output
     columns = pd.MultiIndex.from_product(
         [['Open', 'High', 'Low', 'Close', 'Volume'], ['AAPL']],
-        names=['Price', 'Symbol']
+        names=['Price', 'Ticker']
     )
     mock_data = pd.DataFrame(
         [[180.0, 185.0, 179.0, 182.0, 5000000]], 
@@ -44,7 +44,7 @@ def test_pipeline_cold_start_inserts_data(mock_session_local, mock_yf_download, 
     # 4. Verify data was split, parsed, and pushed safely to our DB records
     saved_records = db_session.query(StockPrice).all()
     assert len(saved_records) == 1
-    assert saved_records[0].symbol == "AAPL"
+    assert saved_records[0].ticker == "AAPL"
     assert float(saved_records[0].close) == 182.0
     assert saved_records[0].date == date(2026, 7, 10)
 
@@ -56,7 +56,7 @@ def test_pipeline_delta_run_updates_overlapping_data(mock_session_local, mock_yf
     
     # Pre-populate the DB with a single record for 2026-07-10
     existing_record = StockPrice(
-        date=date(2026, 7, 10), symbol="AAPL", open=180.0, high=185.0, low=179.0, close=182.0, volume=5000000
+        date=date(2026, 7, 10), ticker="AAPL", open=180.0, high=185.0, low=179.0, close=182.0, volume=5000000
     )
     db_session.add(existing_record)
     db_session.commit()
@@ -64,7 +64,7 @@ def test_pipeline_delta_run_updates_overlapping_data(mock_session_local, mock_yf
     # Create mock API data returning the SAME date but with an updated/corrected Close price
     columns = pd.MultiIndex.from_product(
         [['Open', 'High', 'Low', 'Close', 'Volume'], ['AAPL']],
-        names=['Price', 'Symbol']
+        names=['Price', 'Ticker']
     )
     mock_data = pd.DataFrame(
         [[180.0, 185.0, 179.0, 195.0, 6000000]],  # Close altered to 195.0

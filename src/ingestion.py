@@ -47,30 +47,30 @@ def run_pipeline():
         df = df.stack(level=1).reset_index()
         df.columns = [col.lower() for col in df.columns]
         df['date'] = pd.to_datetime(df['date']).dt.date
-        df = df.dropna(subset=['date', 'symbol', 'close'])
+        df = df.dropna(subset=['date', 'ticker', 'close'])
 
         # 3. VECTORIZED MATRIX SPLITTING VIA MERGE
         print("🔍 Fetching existing records from DB to check for overlaps...")
         min_date = df['date'].min()
         existing_records = (
-            session.query(StockPrice.date, StockPrice.symbol)
+            session.query(StockPrice.date, StockPrice.ticker)
             .filter(StockPrice.date >= min_date)
             .all()
         )
         
         # Convert existing DB composite keys into a clean lookup DataFrame
-        existing_df = pd.DataFrame(existing_records, columns=['date', 'symbol'])
+        existing_df = pd.DataFrame(existing_records, columns=['date', 'ticker'])
         existing_df['is_existing'] = True
 
         # Left-join the fresh API data with our existing DB flags in optimized C-code
-        merged_df = pd.merge(df, existing_df, on=['date', 'symbol'], how='left')
+        merged_df = pd.merge(df, existing_df, on=['date', 'ticker'], how='left')
         merged_df['is_existing'] = merged_df['is_existing'].fillna(False)
 
         # Slice the combined matrix using boolean masks instead of python row loops
         insert_mask = merged_df['is_existing'] == False
         update_mask = merged_df['is_existing'] == True
 
-        db_columns = ['date', 'symbol', 'open', 'high', 'low', 'close', 'volume']
+        db_columns = ['date', 'ticker', 'open', 'high', 'low', 'close', 'volume']
         df_to_insert = merged_df.loc[insert_mask, db_columns]
         df_to_update = merged_df.loc[update_mask, db_columns]
 

@@ -16,10 +16,10 @@ def get_db():
 def health_check():
     return {"status": "healthy"}
 
-@app.get("/prices/{symbol}")
-def get_stock_prices(symbol: str, db: Session = Depends(get_db)):
+@app.get("/prices/{ticker}")
+def get_stock_prices(ticker: str, db: Session = Depends(get_db)):
     """Fetches clean records directly from our localized warehouse."""
-    records = db.query(StockPrice).filter(StockPrice.symbol == symbol.upper()).all()
+    records = db.query(StockPrice).filter(StockPrice.ticker == ticker.upper()).all()
     if not records:
         raise HTTPException(status_code=404, detail="Ticker not found in database.")
     
@@ -34,10 +34,10 @@ def get_stock_prices(symbol: str, db: Session = Depends(get_db)):
         } for r in records
     ]
 
-@app.get("/analysis/{symbol}")
-def get_analytics(symbol: str, window: int = 20, db: Session = Depends(get_db)):
+@app.get("/analysis/{ticker}")
+def get_analytics(ticker: str, window: int = 20, db: Session = Depends(get_db)):
     """Pulls raw records, loads into Pandas, and runs fast math on-the-fly."""
-    records = db.query(StockPrice).filter(StockPrice.symbol == symbol.upper()).all()
+    records = db.query(StockPrice).filter(StockPrice.ticker == ticker.upper()).all()
     if not records:
         raise HTTPException(status_code=404, detail="Ticker analytics unavailable.")
 

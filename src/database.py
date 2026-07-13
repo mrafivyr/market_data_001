@@ -15,7 +15,7 @@ class StockPrice(Base):
 
     # Compound Primary Key: Prevents duplicate records for the same ticker on the same day
     date = Column(Date, primary_key=True, index=True)
-    symbol = Column(String(10), primary_key=True, index=True)
+    ticker = Column(String(10), primary_key=True, index=True)
     open = Column(Numeric(10, 2))
     high = Column(Numeric(10, 2))
     low = Column(Numeric(10, 2))
