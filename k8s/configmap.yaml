@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: market-data-config
+  namespace: market-data
+data:
+  DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/stocks_db"
+  WATCHLIST: "AAPL,MSFT,GOOGL,TSLA,NVDA"

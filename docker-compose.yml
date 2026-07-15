@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: my-postgres
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: stocks_db
+    volumes:
+      - pgdata:/var/lib/post
+    ports:
+      - "5432:5432"
+    networks:
+      - market-data-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  market-data-api:
+    image: market-data-api:001
+    container_name: market-data-api
+    build:
+      context: .
+      target: server
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql://postgres:mysecretpassword@postgres:5432/stocks_db
+    networks:
+      - market-data-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  market-data-ingestion:
+    image: market-data-ingestion:001
+    container_name: market-data-ingestion
+    build:
+      context: .
+      target: ingestion
+    environment:
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql://postgres:mysecretpassword@postgres:5432/stocks_db
+    networks:
+      - market-data-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  market-data-test:
+    image: market-data-test:001
+    profiles:
+      - test-only  # Ensures 'docker compose up' completely ignores this service    
+    build:
+      context: .
+      target: tester
+    environment:
+      PYTHONPATH: /app
+      DATABASE_URL: "sqlite:///:memory:"
+    networks:
+      - market-data-network
+
+networks:
+  market-data-network:
+    driver: bridge
+
+volumes:
+  pgdata:

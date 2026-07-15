@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: market-data-ingestion
+  namespace: market-data
+spec:
+  schedule: "0 9 * * 1-5"  # Run at 9 AM on weekdays
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: ingestion
+            image: market-data-ingestion:001
+            env:
+            - name: PYTHONPATH
+              value: /app
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: market-data-secrets
+                  key: DATABASE_URL
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
+          restartPolicy: OnFailure
